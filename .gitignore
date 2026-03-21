@@ -1,0 +1,40 @@
+# 大数据文件（太大，不提交）
+data/*.csv
+data/*.parquet
+data/*.json
+
+# 编译产物
+spark-project/target/
+spark-project/.classpath
+spark-project/.project
+spark-project/.settings/
+spark-apps/*.jar
+
+# Maven 本地仓库（容器内）
+.m2/
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+logs/
+
+# Docker 卷数据（本地）
+mysql-data/
+spark-logs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env.local

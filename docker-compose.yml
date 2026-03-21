@@ -1,0 +1,118 @@
+version: '3.8'
+
+# 电商用户行为分析大数据平台 - Docker Compose
+# 技术栈: Ubuntu 22.04 + Java 11 + Spark 3.5.3 + MySQL 8.0 + Python 3.10
+
+services:
+
+  # ============================================================
+  # MySQL 8.0 - 存储任务参数和分析结果
+  # ============================================================
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    hostname: mysql
+    env_file: .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: ${TZ}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init-sql:/docker-entrypoint-initdb.d:ro
+    networks:
+      - bigdata-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ============================================================
+  # Spark Master 节点
+  # ============================================================
+  spark-master:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spark-master
+    hostname: spark-master
+    env_file: .env
+    environment:
+      SPARK_MODE: master
+      SPARK_MASTER_HOST: spark-master
+      SPARK_MASTER_PORT: 7077
+      SPARK_MASTER_WEBUI_PORT: 8080
+      TZ: ${TZ}
+    ports:
+      - "8080:8080"   # Spark Master Web UI
+      - "7077:7077"   # Spark Master 通信端口
+      - "4040:4040"   # Spark Application UI
+    volumes:
+      - ./data:/opt/data                        # CSV 数据目录
+      - ./spark-apps:/opt/spark-apps            # Spark JAR 包目录
+      - ./scripts:/opt/scripts                  # 脚本目录
+      - ./spark-project:/opt/spark-project      # Maven 项目源码（用于容器内编译）
+      - spark-logs:/opt/logs
+      - maven-repo:/root/.m2                    # Maven 本地仓库缓存
+    networks:
+      - bigdata-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # ============================================================
+  # Spark Worker 节点
+  # ============================================================
+  spark-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spark-worker-1
+    hostname: spark-worker-1
+    env_file: .env
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_HOST: spark-master
+      SPARK_MASTER_PORT: 7077
+      SPARK_MASTER_URL: ${SPARK_MASTER_URL}
+      SPARK_WORKER_MEMORY: ${SPARK_WORKER_MEMORY}
+      SPARK_WORKER_CORES: ${SPARK_WORKER_CORES}
+      SPARK_WORKER_WEBUI_PORT: 8081
+      TZ: ${TZ}
+    ports:
+      - "8081:8081"   # Spark Worker Web UI
+    volumes:
+      - ./data:/opt/data
+      - ./spark-apps:/opt/spark-apps
+      - spark-logs:/opt/logs
+    networks:
+      - bigdata-net
+    depends_on:
+      - spark-master
+
+# ============================================================
+# 持久化卷
+# ============================================================
+volumes:
+  mysql-data:
+    driver: local
+  spark-logs:
+    driver: local
+  maven-repo:
+    driver: local
+
+# ============================================================
+# 网络
+# ============================================================
+networks:
+  bigdata-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
