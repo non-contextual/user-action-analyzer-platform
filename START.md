@@ -78,15 +78,11 @@ docker exec mysql mysqladmin ping -h localhost -u root -proot123 --silent
 ## 第四步：编译项目
 
 ```bash
-# 在 spark-master 容器内编译
+# 在 spark-master 容器内编译并自动部署 JAR
 MSYS_NO_PATHCONV=1 docker exec spark-master bash /opt/scripts/build.sh
-
-# 将 JAR 部署到 spark-apps（重要！）
-MSYS_NO_PATHCONV=1 docker exec spark-master bash -c \
-  "cp /opt/spark-project/target/user-analyzer-1.0-SNAPSHOT.jar /opt/spark-apps/"
 ```
 
-> ⚠️ **每次修改 Java 源码后都需要重新执行这两条命令**。
+> ⚠️ **每次修改 Java 源码后都需要重新执行此命令**。
 
 ---
 
