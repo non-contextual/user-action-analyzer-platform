@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户行为分析仪表板</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .chart-container {
+            width: 100%;
+            height: 400px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #333;
+            margin: 0;
+        }
+        .header p {
+            color: #666;
+            margin: 10px 0 0 0;
+        }
+        .api-link {
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            display: block;
+            max-width: 200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .api-link:hover {
+            background: #0056b3;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #666;
+        }
+        .error {
+            color: #f44336;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>用户行为分析仪表板</h1>
+            <p>用户行为分析数据实时可视化</p>
+            <a href="/api/swagger-ui.html" class="api-link">查看 API 文档</a>
+        </div>
+
+        <div id="loading" class="loading">加载数据中...</div>
+
+        <div class="card">
+            <h2>会话时长分布</h2>
+            <div id="sessionDurationChart" class="chart-container"></div>
+        </div>
+
+        <div class="card">
+            <h2>会话步长分布</h2>
+            <div id="stepLengthChart" class="chart-container"></div>
+        </div>
+
+        <div class="card">
+            <h2>热门品类 Top 10</h2>
+            <div id="top10CategoriesChart" class="chart-container"></div>
+        </div>
+
+        <div class="card">
+            <h2>页面转化率</h2>
+            <div id="pageConversionChart" class="chart-container"></div>
+        </div>
+
+        <div class="card">
+            <h2>会话汇总</h2>
+            <div id="sessionSummaryChart" class="chart-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = '/api';
+        // 完整的 API 路径格式：/api/analytics/...
+        // 例如：/api/analytics/session/length-distribution?taskId=1
+        const TASK_ID = 1;
+
+        async function fetchWithRetry(url, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    console.error(`Attempt ${i + 1} failed:`, error);
+                    if (i === retries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+                }
+            }
+        }
+
+        function initSessionDurationChart(data) {
+            const chart = echarts.init(document.getElementById('sessionDurationChart'));
+            const option = {
+                title: { text: '会话时长分布' },
+                tooltip: { trigger: 'axis' },
+                xAxis: { type: 'category', data: data.xAxis },
+                yAxis: { type: 'value', name: '会话数' },
+                series: [{
+                    name: '会话数',
+                    type: 'line',
+                    data: data.series,
+                    smooth: true,
+                    areaStyle: { opacity: 0.3 },
+                    itemStyle: { color: '#5470c6' }
+                }]
+            };
+            chart.setOption(option);
+        }
+
+        function initStepLengthChart(data) {
+            const chart = echarts.init(document.getElementById('stepLengthChart'));
+            const option = {
+                title: { text: '会话步长分布' },
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                legend: { data: data.series.map(s => s.name === 'Step Count' ? '步长数' : s.name) },
+                xAxis: { type: 'category', data: data.xAxis },
+                yAxis: { type: 'value', name: '会话数' },
+                series: data.series.map(s => ({
+                    name: s.name === 'Step Count' ? '步长数' : s.name,
+                    type: 'bar',
+                    data: s.data,
+                    itemStyle: { borderRadius: [4, 4, 4, 4] }
+                }))
+            };
+            chart.setOption(option);
+        }
+
+        function initTop10CategoriesChart(data) {
+            const chart = echarts.init(document.getElementById('top10CategoriesChart'));
+            const option = {
+                title: { text: '热门品类 Top 10' },
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                legend: { data: data.series.map(s => {
+                    if (s.name === 'Clicks') return '点击数';
+                    if (s.name === 'Orders') return '订单数';
+                    if (s.name === 'Payments') return '支付数';
+                    return s.name;
+                }) },
+                xAxis: { type: 'category', data: data.xAxis, name: '品类ID' },
+                yAxis: { type: 'value', name: '数量' },
+                series: data.series.map(s => ({
+                    name: s.name === 'Clicks' ? '点击数' : s.name === 'Orders' ? '订单数' : s.name === 'Payments' ? '支付数' : s.name,
+                    type: 'bar',
+                    data: s.data,
+                    itemStyle: { borderRadius: [4, 4, 4, 4] }
+                }))
+            };
+            chart.setOption(option);
+        }
+
+        function initPageConversionChart(data) {
+            const chart = echarts.init(document.getElementById('pageConversionChart'));
+            const option = {
+                title: { text: '页面转化率 (%)' },
+                tooltip: { trigger: 'axis', formatter: '{b}: {c}%' },
+                xAxis: { type: 'category', data: data.xAxis, name: '页面流程' },
+                yAxis: { type: 'value', name: '转化率 (%)', max: 100 },
+                series: [{
+                    name: '转化率',
+                    type: 'line',
+                    data: data.series,
+                    smooth: true,
+                    areaStyle: { opacity: 0.3 },
+                    itemStyle: { color: '#91cc75' },
+                    markPoint: {
+                        data: data.series.map((val, idx) => ({
+                            value: val,
+                            xAxis: idx,
+                            yAxis: val,
+                            itemStyle: { color: '#ff6b6b' }
+                        }))
+                    }
+                }]
+            };
+            chart.setOption(option);
+        }
+
+        function initSessionSummaryChart(data) {
+            const chart = echarts.init(document.getElementById('sessionSummaryChart'));
+            const option = {
+                title: { text: '会话时长汇总' },
+                tooltip: { trigger: 'item', formatter: '{b}: {c} 个会话 ({d}%)' },
+                legend: { orient: 'vertical', left: 'left' },
+                series: [{
+                    name: '时长分布',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 10,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: { show: false },
+                    emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
+                    data: data.data.map(item => ({
+                        value: item.value,
+                        name: item.name,
+                        itemStyle: { color: getRandomColor() }
+                    }))
+                }]
+            };
+            chart.setOption(option);
+        }
+
+        function getRandomColor() {
+            const colors = ['#5470c6', '#91cc75', '#f39c12', '#f363e4', '#ff6b6b', '#c9302c', '#7bed9f', '#00d2d3', '#1e90ff', '#ff4757'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        async function loadAllCharts() {
+            try {
+                const [durationData, stepData, categoriesData, conversionData, summaryData] = await Promise.all([
+                    fetchWithRetry(`${API_BASE_URL}/analytics/session/length-distribution?taskId=${TASK_ID}`),
+                    fetchWithRetry(`${API_BASE_URL}/analytics/session/step-distribution?taskId=${TASK_ID}`),
+                    fetchWithRetry(`${API_BASE_URL}/analytics/category/top10?taskId=${TASK_ID}`),
+                    fetchWithRetry(`${API_BASE_URL}/analytics/page/conversion-rate?taskId=${TASK_ID}`),
+                    fetchWithRetry(`${API_BASE_URL}/analytics/session/summary?taskId=${TASK_ID}`)
+                ]);
+
+                document.getElementById('loading').style.display = 'none';
+
+                if (durationData.code === 200 && durationData.data) {
+                    initSessionDurationChart(durationData.data);
+                } else {
+                    console.warn('会话时长分布数据加载失败:', durationData.message || '无数据');
+                }
+                if (stepData.code === 200 && stepData.data) {
+                    initStepLengthChart(stepData.data);
+                } else {
+                    console.warn('会话步长分布数据加载失败:', stepData.message || '无数据');
+                }
+                if (categoriesData.code === 200 && categoriesData.data) {
+                    initTop10CategoriesChart(categoriesData.data);
+                } else {
+                    console.warn('热门品类 Top10 数据加载失败:', categoriesData.message || '无数据');
+                    // 显示无数据提示
+                    const top10ChartContainer = document.getElementById('top10CategoriesChart');
+                    if (top10ChartContainer) {
+                        top10ChartContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">暂无数据</div>';
+                    }
+                }
+                if (conversionData.code === 200 && conversionData.data) {
+                    initPageConversionChart(conversionData.data);
+                } else {
+                    console.warn('页面转化率数据加载失败:', conversionData.message || '无数据');
+                    // 显示无数据提示
+                    const conversionChartContainer = document.getElementById('pageConversionChart');
+                    if (conversionChartContainer) {
+                        conversionChartContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">暂无数据</div>';
+                    }
+                }
+                if (summaryData.code === 200 && summaryData.data) {
+                    initSessionSummaryChart(summaryData.data);
+                } else {
+                    console.warn('会话汇总数据加载失败:', summaryData.message || '无数据');
+                }
+
+            } catch (error) {
+                document.getElementById('loading').innerHTML = `
+                    <div class="error">
+                        <h3>数据加载失败</h3>
+                        <p>${error.message}</p>
+                        <p>请确保后端服务正在运行且可访问。</p>
+                    </div>
+                `;
+                console.error('加载图表出错:', error);
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            const charts = [
+                echarts.getInstanceByDom(document.getElementById('sessionDurationChart')),
+                echarts.getInstanceByDom(document.getElementById('stepLengthChart')),
+                echarts.getInstanceByDom(document.getElementById('top10CategoriesChart')),
+                echarts.getInstanceByDom(document.getElementById('pageConversionChart')),
+                echarts.getInstanceByDom(document.getElementById('sessionSummaryChart'))
+            ];
+            charts.forEach(chart => chart && chart.resize());
+        });
+
+        loadAllCharts();
+    </script>
+</body>
+</html>
