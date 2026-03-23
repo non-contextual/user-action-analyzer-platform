@@ -13,8 +13,8 @@
 | 热门品类 Top10 | 第4周 | ✅ 完成，已验证 |
 | 随机抽取 Session | 第5周 | ✅ 完成，已验证 |
 | 页面单跳转化率 | 第5周 | ✅ 完成，已验证 |
-| Spring Boot 后端接口 | 第6周 | ⬜ 未开始 |
-| ECharts 前端可视化 | 第6周 | ⬜ 未开始 |
+| Spring Boot 后端接口 | 第6周 | ✅ 完成，已验证 |
+| ECharts 前端可视化 | 第6周 | ✅ 完成，已验证 |
 | 答辩 PPT | 第7周 | ⬜ 未开始 |
 
 ---
@@ -33,6 +33,8 @@
 | 计算 API | RDD + Lambda | 改为 DataFrame / SparkSQL（解决序列化异常） |
 | 部署方式 | 本地直接运行 | Docker Compose 三容器（spark-master + spark-worker + mysql） |
 | 任务路由 | 未区分任务类型 | 按 task_type（SESSION/TOP10/RANDOM）路由执行不同分析模块 |
+| 后端接口 | 未明确 | 实现了基于 Spring Boot 3.2 的 RESTful API，支持 ECharts 数据格式 |
+| 前端可视化 | 未明确 | 实现了基于 ECharts 的可视化界面，包含折线图、柱状图、饼图等多种图表类型 |
 
 ### 📋 待计划书同步
 
@@ -62,6 +64,27 @@
 | 行为数据 | 52,489 条 |
 | 匹配 Session 数 | 212 |
 
+**Spring Boot 后端接口验证**
+
+| 接口 | 状态 | 响应时间 |
+|------|------|----------|
+| /api/analytics/session/length-distribution | ✅ 正常 | < 300ms |
+| /api/analytics/session/step-distribution | ✅ 正常 | < 300ms |
+| /api/analytics/category/top10 | ✅ 正常 | < 300ms |
+| /api/analytics/page/conversion-rate | ✅ 正常 | < 300ms |
+| /api/analytics/session/summary | ✅ 正常 | < 300ms |
+| /api/analytics/cache/clear | ✅ 正常 | < 100ms |
+
+**ECharts 可视化验证**
+
+| 图表类型 | 状态 | 数据加载 |
+|---------|------|----------|
+| 会话时长分布（折线图） | ✅ 正常 | ✅ 成功 |
+| 会话步长分布（柱状图） | ✅ 正常 | ✅ 成功 |
+| 热门品类 Top10（多系列柱状图） | ✅ 正常 | ✅ 成功 |
+| 页面转化率（折线图） | ✅ 正常 | ✅ 成功 |
+| 会话汇总（饼图） | ✅ 正常 | ✅ 成功 |
+
 ---
 
 ## 运行方式
@@ -87,5 +110,5 @@ docker exec spark-master bash -c "/opt/spark/bin/spark-submit --class com.useran
 
 - [x] 随机抽取 Session ✅
 - [x] 页面单跳转化率 ✅
-- [ ] Spring Boot 接口 + ECharts 可视化
+- [x] Spring Boot 接口 + ECharts 可视化 ✅
 - [ ] 答辩 PPT
