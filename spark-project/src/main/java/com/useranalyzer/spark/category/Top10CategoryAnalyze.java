@@ -23,7 +23,7 @@ import java.util.List;
 public class Top10CategoryAnalyze {
 
     public static void analyze(JavaSparkContext sc, long taskId, JSONObject taskParam,
-                               String userVisitActionPath, String userInfoPath) {
+                               String userVisitActionPath) {
 
         System.out.println("[Top10品类] taskId=" + taskId + " 开始...");
 
@@ -51,6 +51,8 @@ public class Top10CategoryAnalyze {
 
         // ----------------------------------------------------------------
         // 3. 按日期范围过滤
+        //    注意：使用独立视图 uva_top10，避免覆盖原始 uva 视图
+        //          （SESSION 任务中 PageConvertRate 仍需访问原始 uva）
         // ----------------------------------------------------------------
         if (startDate != null && endDate != null) {
             df = df.filter(
@@ -58,7 +60,7 @@ public class Top10CategoryAnalyze {
                 .and(df.col("date").$less$eq(endDate))
             );
         }
-        df.createOrReplaceTempView("uva");
+        df.createOrReplaceTempView("uva_top10");
 
         System.out.println("[Top10品类] 行为数据行数: " + df.count());
 
@@ -67,7 +69,7 @@ public class Top10CategoryAnalyze {
         // ----------------------------------------------------------------
         spark.sql(
             "SELECT click_category_id AS cat_id, count(*) AS click_count " +
-            "FROM uva " +
+            "FROM uva_top10 " +
             "WHERE click_category_id IS NOT NULL AND trim(click_category_id) != '' " +
             "GROUP BY click_category_id"
         ).createOrReplaceTempView("click_counts");
@@ -78,7 +80,7 @@ public class Top10CategoryAnalyze {
         spark.sql(
             "SELECT trim(cat) AS cat_id, count(*) AS order_count FROM (" +
             "  SELECT explode(split(order_category_ids, ',')) AS cat " +
-            "  FROM uva WHERE order_category_ids IS NOT NULL AND order_category_ids != ''" +
+            "  FROM uva_top10 WHERE order_category_ids IS NOT NULL AND order_category_ids != ''" +
             ") WHERE trim(cat) != '' GROUP BY trim(cat)"
         ).createOrReplaceTempView("order_counts");
 
@@ -88,7 +90,7 @@ public class Top10CategoryAnalyze {
         spark.sql(
             "SELECT trim(cat) AS cat_id, count(*) AS pay_count FROM (" +
             "  SELECT explode(split(pay_category_ids, ',')) AS cat " +
-            "  FROM uva WHERE pay_category_ids IS NOT NULL AND pay_category_ids != ''" +
+            "  FROM uva_top10 WHERE pay_category_ids IS NOT NULL AND pay_category_ids != ''" +
             ") WHERE trim(cat) != '' GROUP BY trim(cat)"
         ).createOrReplaceTempView("pay_counts");
 

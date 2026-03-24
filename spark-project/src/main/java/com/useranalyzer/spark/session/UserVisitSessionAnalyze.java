@@ -220,20 +220,6 @@ public class UserVisitSessionAnalyze {
         return sb.toString();
     }
 
-    /** 将逗号分隔的数字字符串转为 SQL IN 列表（不带单引号，用于数字列） */
-    private static String toSqlInListRaw(String csv) {
-        if (!csv.matches("[\\d,\\s]+")) {
-            throw new IllegalArgumentException("categoryIds 包含非数字字符，拒绝拼入 SQL: " + csv);
-        }
-        StringBuilder sb = new StringBuilder();
-        String[] parts = csv.split(",");
-        for (int i = 0; i < parts.length; i++) {
-            if (i > 0) sb.append(",");
-            sb.append(parts[i].trim());
-        }
-        return sb.toString();
-    }
-
     private static List<String> getAllStatKeys() {
         return Arrays.asList(
             Constants.FIELD_SESSION_COUNT,

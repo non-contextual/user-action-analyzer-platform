@@ -43,6 +43,9 @@ public class UserActionAnalyzerApp {
         Properties config = new Properties();
         InputStream is = UserActionAnalyzerApp.class.getClassLoader()
                 .getResourceAsStream("config.properties");
+        if (is == null) {
+            throw new RuntimeException("找不到 config.properties，请确认文件在 src/main/resources/ 下");
+        }
         config.load(is);
 
         String dataFormat          = config.getProperty("data.format", "generated");
@@ -109,7 +112,7 @@ public class UserActionAnalyzerApp {
 
                     System.out.println("\n----- [2/3] 热门品类 Top10 -----");
                     Top10CategoryAnalyze.analyze(sc, taskId, taskParam,
-                            userVisitActionPath, userInfoPath);
+                            userVisitActionPath);
 
                     System.out.println("\n----- [3/3] 页面单跳转化率 -----");
                     PageConvertRate.analyze(sc, taskId, taskParam,
@@ -119,7 +122,7 @@ public class UserActionAnalyzerApp {
                 case "TOP10":
                     System.out.println("\n----- [1/1] 热门品类 Top10 -----");
                     Top10CategoryAnalyze.analyze(sc, taskId, taskParam,
-                            userVisitActionPath, userInfoPath);
+                            userVisitActionPath);
                     break;
 
                 case "RANDOM":
@@ -133,7 +136,7 @@ public class UserActionAnalyzerApp {
                     UserVisitSessionAnalyze.analyze(sc, taskId, taskParam,
                             userVisitActionPath, userInfoPath);
                     Top10CategoryAnalyze.analyze(sc, taskId, taskParam,
-                            userVisitActionPath, userInfoPath);
+                            userVisitActionPath);
                     PageConvertRate.analyze(sc, taskId, taskParam,
                             userVisitActionPath, userInfoPath);
                     break;
