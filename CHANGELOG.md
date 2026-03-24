@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1.0] - 2026-03-24
+
+### Fixed
+- **Spark**: `Top10CategoryAnalyze` 不再覆盖共享 `uva` 视图，改用独立 `uva_top10` 视图，修复 SESSION 任务中 `PageConvertRate` 使用错误数据集的 bug
+- **Backend**: 页面转化率精度丢失问题——原 `(int) Math.round(rate * 100)` 将 0.0084 截断为 1，改为返回保留两位小数的 Double 百分比（0.84）
+- **Backend**: `AnalyticsController` 数据不存在时返回真实 HTTP 404，而非 HTTP 200 包裹错误码
+- **Backend**: `GlobalExceptionHandler` 异常处理器顺序调整，避免子类异常被父类提前捕获
+- **Scripts**: `submit_job.sh` 默认主类修正为 `com.useranalyzer.UserActionAnalyzerApp`（原引用不存在的类名）
+- **Scripts**: `start.sh` driver memory 从 1g 提升至 4g；移除不存在的 task_id=4 引用
+
+### Changed
+- **Backend**: `LineChartData.series` 类型从 `List<Integer>` 改为 `List<? extends Number>`，支持转化率 Double 值
+- **Spark**: 移除 `Top10CategoryAnalyze.analyze()` 中无用的 `userInfoPath` 参数
+- **Spark**: 移除 `UserVisitSessionAnalyze` 中从未调用的死代码方法 `toSqlInListRaw`
+- **Docs**: `START.md` 和 `TODOS.md` 移至 `docs/` 目录；`start.sh` 和 `entrypoint.sh` 统一收入 `scripts/` 目录
+- **Docs**: 修正 `backend/README.md` 中 Spring Boot 版本（3.2.0 → 2.7.18）、Java 最低版本（17 → 8）、@Cacheable 说明层级错误
+- **Docs**: 更新 `docs/START.md` CRLF 修复命令以反映脚本新路径
+
 ## [0.1.0.0] - 2026-03-24
 
 ### Added
