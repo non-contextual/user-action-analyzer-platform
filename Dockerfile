@@ -53,7 +53,7 @@ COPY conf/spark-env.sh ${SPARK_HOME}/conf/spark-env.sh
 
 # 复制脚本
 COPY scripts/ /opt/scripts/
-COPY entrypoint.sh /entrypoint.sh
+COPY scripts/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh \
     && find /opt/scripts -name "*.sh" -exec chmod +x {} \;
 

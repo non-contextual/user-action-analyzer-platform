@@ -37,11 +37,15 @@ UserActionAnalyzerPlatform/
 ├── docker-compose.yml          # 三容器编排配置
 ├── Dockerfile                  # Spark 镜像（Ubuntu + Java 11 + Spark + Maven）
 ├── .env                        # 环境变量（数据库密码、Spark 配置）
-├── start.sh                    # 一键启动脚本
+├── docs/
+│   ├── START.md                # 快速上手指南
+│   └── TODOS.md                # 项目进度与变更跟踪
 ├── data/                       # 数据目录（需自行放入 2019-Oct.csv）
 ├── init-sql/
 │   └── init.sql                # MySQL 建表 + 初始任务参数
 ├── scripts/
+│   ├── start.sh                # 一键启动脚本
+│   ├── entrypoint.sh           # Docker 容器入口脚本
 │   ├── build.sh                # 容器内 Maven 编译脚本
 │   ├── generate_data.py        # 模拟数据生成脚本
 │   └── submit_job.sh           # Spark 作业提交脚本
@@ -78,7 +82,7 @@ UserActionAnalyzerPlatform/
 
 ## 快速开始
 
-详见 [START.md](START.md)。
+详见 [docs/START.md](docs/START.md)。
 
 ## 与计划书的主要变更
 

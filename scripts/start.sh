@@ -27,11 +27,11 @@ if [ "$DATA_FORMAT" = "kaggle" ]; then
 fi
 
 # 1. 启动 Docker 服务
-echo "[1/5] 启动 Docker 服务..."
+echo "[1/6] 启动 Docker 服务..."
 docker compose up -d --build
 
 # 2. 等待 MySQL 就绪
-echo "[2/5] 等待 MySQL 启动..."
+echo "[2/6] 等待 MySQL 启动..."
 until docker exec mysql mysqladmin ping -h localhost -u root -proot123 --silent 2>/dev/null; do
     echo "  等待 MySQL..."
     sleep 3
@@ -39,7 +39,7 @@ done
 echo "  MySQL 已就绪 ✓"
 
 # 3. 等待 Spark Master 就绪
-echo "[3/5] 等待 Spark Master 启动..."
+echo "[3/6] 等待 Spark Master 启动..."
 until docker exec spark-master bash -c "curl -sf http://localhost:8080 > /dev/null 2>&1"; do
     echo "  等待 Spark Master..."
     sleep 3
@@ -48,15 +48,15 @@ echo "  Spark Master 已就绪 ✓"
 
 # 4. 生成模拟数据（如果 CSV 不存在）
 if [ ! -f "./data/user_info.csv" ]; then
-    echo "[4/5] 生成模拟数据..."
+    echo "[4/6] 生成模拟数据..."
     docker exec spark-master python3 /opt/scripts/generate_data.py
     echo "  数据生成完成 ✓"
 else
-    echo "[4/5] 数据已存在，跳过生成"
+    echo "[4/6] 数据已存在，跳过生成"
 fi
 
 # 5. 编译项目
-echo "[5/5] 编译 Spark 项目..."
+echo "[5/6] 编译 Spark 项目..."
 docker exec spark-master bash /opt/scripts/build.sh
 
 # 6. 提交 Spark 作业
@@ -69,7 +69,7 @@ JAR_NAME=$(basename "$JAR_FILE")
 
 echo ""
 echo "============================================"
-echo "  提交 Spark 作业"
+echo "[6/6] 提交 Spark 作业"
 echo "  JAR: $JAR_NAME"
 echo "  taskId: $TASK_ID"
 echo "============================================"
@@ -78,7 +78,7 @@ docker exec spark-master \
     /opt/spark/bin/spark-submit \
     --master spark://spark-master:7077 \
     --deploy-mode client \
-    --driver-memory 1g \
+    --driver-memory 4g \
     --executor-memory 1g \
     --executor-cores 1 \
     --num-executors 1 \
@@ -102,5 +102,5 @@ echo ""
 echo "  Kaggle 模式运行方式:"
 echo "    1. 下载 2019-Oct.csv 放入 ./data/ 目录"
 echo "    2. 修改 config.properties: data.format=kaggle, data.kaggle.sample=0.1"
-echo "    3. bash start.sh 4 kaggle   (task_id=4: 仅日期过滤)"
+echo "    3. bash start.sh 2 kaggle   (task_id=2: 仅日期过滤 TOP10)"
 echo "============================================"

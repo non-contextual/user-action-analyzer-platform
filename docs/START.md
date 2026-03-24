@@ -103,7 +103,7 @@ docker exec spark-master /opt/spark/bin/spark-submit --class com.useranalyzer.Us
 docker exec spark-master /opt/spark/bin/spark-submit --class com.useranalyzer.UserActionAnalyzerApp --driver-memory 4g /opt/spark-apps/user-analyzer-1.0-SNAPSHOT.jar 3
 ```
 
-> **注意**：命令使用单行格式，Git Bash 和 PowerShell 均可直接执行。
+> **注意**：命令使用单行格式，PowerShell 可直接执行。
 
 ---
 
@@ -113,7 +113,7 @@ docker exec spark-master /opt/spark/bin/spark-submit --class com.useranalyzer.Us
 
 ```bash
 # 连接 MySQL
-MSYS_NO_PATHCONV=1 docker exec -it mysql mysql -u spark -pspark123 user_action_db
+docker exec -it mysql mysql -u spark -pspark123 user_action_db
 
 # Session 统计（时长/步长分布）
 SELECT session_count, visit_length_1s_3s, visit_length_10s_30s, step_length_1_3
@@ -165,7 +165,7 @@ LIMIT 10;
 
 | 工具 | 最低版本 | 检查命令 |
 |------|---------|---------|
-| Java | 17 | `java -version` |
+| Java | 8 | `java -version` |
 | Maven | 3.8 | `mvn -version` |
 
 ### 启动服务
@@ -250,13 +250,13 @@ Windows 上 Git 检出时可能将脚本换行符转成了 CRLF，Linux 容器�
 
 **Git Bash：**
 ```bash
-sed -i 's/\r//' entrypoint.sh conf/spark-env.sh scripts/build.sh scripts/submit_job.sh
+sed -i 's/\r//' scripts/entrypoint.sh scripts/start.sh conf/spark-env.sh scripts/build.sh scripts/submit_job.sh
 docker compose up -d --build spark-master spark-worker
 ```
 
 **PowerShell：**
 ```powershell
-foreach ($f in @("entrypoint.sh","conf/spark-env.sh","scripts/build.sh","scripts/submit_job.sh")) {
+foreach ($f in @("scripts/entrypoint.sh","scripts/start.sh","conf/spark-env.sh","scripts/build.sh","scripts/submit_job.sh")) {
     (Get-Content $f -Raw) -replace "`r`n", "`n" | Set-Content $f -NoNewline
 }
 docker compose up -d --build spark-master spark-worker
