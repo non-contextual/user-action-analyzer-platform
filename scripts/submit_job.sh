@@ -1,15 +1,15 @@
 #!/bin/bash
 # ============================================================
 # Spark 作业提交脚本
-# 用法: ./submit_job.sh <jar文件名> <主类> [额外参数]
-# 示例: ./submit_job.sh user-analyzer-1.0.jar com.useranalyzer.SessionAnalyzer 1
+# 用法: ./submit_job.sh <jar文件名> <taskId>
+# 示例: ./submit_job.sh user-analyzer-1.0-SNAPSHOT.jar 1
 # ============================================================
 
 set -e
 
 JAR_NAME="${1:-user-analyzer-1.0-SNAPSHOT.jar}"
-MAIN_CLASS="${2:-com.useranalyzer.SessionAnalyzer}"
-TASK_ID="${3:-1}"
+MAIN_CLASS="com.useranalyzer.UserActionAnalyzerApp"
+TASK_ID="${2:-1}"
 JAR_PATH="/opt/spark-apps/${JAR_NAME}"
 
 if [ ! -f "$JAR_PATH" ]; then
