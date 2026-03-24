@@ -14,7 +14,7 @@ public class Top10Category {
 
     @Id
     @Column(name = "category_id")
-    private Long categoryId;
+    private String categoryId;
 
     @Column(name = "click_count")
     private Long clickCount;
@@ -28,7 +28,7 @@ public class Top10Category {
 
 class Top10CategoryId implements java.io.Serializable {
     private Long taskId;
-    private Long categoryId;
+    private String categoryId;
 
     public Long getTaskId() {
         return taskId;
@@ -38,11 +38,11 @@ class Top10CategoryId implements java.io.Serializable {
         this.taskId = taskId;
     }
 
-    public Long getCategoryId() {
+    public String getCategoryId() {
         return categoryId;
     }
 
-    public void setCategoryId(Long categoryId) {
+    public void setCategoryId(String categoryId) {
         this.categoryId = categoryId;
     }
 
