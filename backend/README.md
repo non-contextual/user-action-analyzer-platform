@@ -6,7 +6,7 @@
 
 ## 技术栈
 
-- **Spring Boot**: 3.2.0
+- **Spring Boot**: 2.7.18
 - **Java**: 8
 - **Spring Data JPA**: 数据持久化
 - **MySQL**: 8.0
@@ -402,7 +402,7 @@ docker exec mysql mysql -u spark -pspark123 user_action_db -e "SHOW TABLES;"
 ### Q: 缓存未生效
 
 **A**: 检查 `@EnableCaching` 注解是否添加到主类
-**B**: 确认 Repository 方法上有 `@Cacheable` 注解
+**B**: 确认 Service 方法上有 `@Cacheable` 注解
 
 ### Q: Swagger UI 无法访问
 
