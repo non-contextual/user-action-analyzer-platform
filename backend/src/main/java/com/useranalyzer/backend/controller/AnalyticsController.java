@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +25,7 @@ public class AnalyticsController {
             @RequestParam(defaultValue = "1") Long taskId) {
         LineChartData data = analyticsService.getSessionLengthDistribution(taskId);
         if (data == null) {
-            return ResponseEntity.ok(ApiResponse.error(404, "Task not found"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(404,"Task not found"));
         }
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -36,7 +37,7 @@ public class AnalyticsController {
             @RequestParam(defaultValue = "1") Long taskId) {
         BarChartData data = analyticsService.getStepLengthDistribution(taskId);
         if (data == null) {
-            return ResponseEntity.ok(ApiResponse.error(404, "Task not found"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(404,"Task not found"));
         }
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -48,7 +49,7 @@ public class AnalyticsController {
             @RequestParam(defaultValue = "1") Long taskId) {
         BarChartData data = analyticsService.getTop10Categories(taskId);
         if (data == null || data.getSeries().isEmpty()) {
-            return ResponseEntity.ok(ApiResponse.error(404, "No data found"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(404,"No data found"));
         }
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -60,7 +61,7 @@ public class AnalyticsController {
             @RequestParam(defaultValue = "1") Long taskId) {
         LineChartData data = analyticsService.getPageConversionRate(taskId);
         if (data == null || data.getSeries().isEmpty()) {
-            return ResponseEntity.ok(ApiResponse.error(404, "No data found"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(404,"No data found"));
         }
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -72,7 +73,7 @@ public class AnalyticsController {
             @RequestParam(defaultValue = "1") Long taskId) {
         PieChartData data = analyticsService.getSessionSummary(taskId);
         if (data == null || data.getData().isEmpty()) {
-            return ResponseEntity.ok(ApiResponse.error(404, "No data found"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(404,"No data found"));
         }
         return ResponseEntity.ok(ApiResponse.success(data));
     }

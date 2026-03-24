@@ -11,13 +11,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ApiResponse<Void> handleException(Exception e) {
-        log.error("Internal server error", e);
-        return ApiResponse.error(500, "Internal server error: " + e.getMessage());
-    }
-
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleIllegalArgumentException(IllegalArgumentException e) {
@@ -30,5 +23,12 @@ public class GlobalExceptionHandler {
     public ApiResponse<Void> handleRuntimeException(RuntimeException e) {
         log.error("Runtime error", e);
         return ApiResponse.error(500, "Runtime error: " + e.getMessage());
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ApiResponse<Void> handleException(Exception e) {
+        log.error("Internal server error", e);
+        return ApiResponse.error(500, "Internal server error: " + e.getMessage());
     }
 }

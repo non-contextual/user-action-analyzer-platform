@@ -12,5 +12,5 @@ import java.util.List;
 public class LineChartData {
     private String name;
     private List<String> xAxis;
-    private List<Integer> series;
+    private List<? extends Number> series;
 }

@@ -111,8 +111,10 @@ public class AnalyticsService {
                 .map(PageConvertRate::getPageFlow)
                 .collect(Collectors.toList());
 
-        List<Integer> convertRates = rates.stream()
-                .map(rate -> (int) Math.round(rate.getConvertRate() * 100))
+        // 转化率以百分比形式输出，保留两位小数（避免 int 截断丢精度）
+        // 例：0.0084 → 0.84，而非强转 int 后的 1
+        List<Double> convertRates = rates.stream()
+                .map(rate -> Math.round(rate.getConvertRate() * 10000.0) / 100.0)
                 .collect(Collectors.toList());
 
         return new LineChartData(
