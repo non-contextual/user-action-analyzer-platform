@@ -9,9 +9,11 @@ spark-project/.classpath
 spark-project/.project
 spark-project/.settings/
 spark-apps/*.jar
+backend/target/
 
 # Maven 本地仓库（容器内）
 .m2/
+backend/mvn_repo/
 
 # IDE
 .idea/

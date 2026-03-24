@@ -66,6 +66,8 @@ docker ps
 # 应看到三个容器：mysql、spark-master、spark-worker-1
 ```
 
+> **Docker Compose 服务名 vs 容器名**：`docker compose` 命令（如 `up`、`down`、`--build`）使用**服务名** `spark-master`、`spark-worker`；`docker exec`、`docker logs` 使用**容器名** `spark-master`、`spark-worker-1`。
+
 等待 MySQL 健康检查通过（约 30 秒）：
 
 ```bash
@@ -79,7 +81,7 @@ docker exec mysql mysqladmin ping -h localhost -u root -proot123 --silent
 
 ```bash
 # 在 spark-master 容器内编译并自动部署 JAR
-MSYS_NO_PATHCONV=1 docker exec spark-master bash /opt/scripts/build.sh
+docker exec spark-master bash /opt/scripts/build.sh
 ```
 
 > ⚠️ **每次修改 Java 源码后都需要重新执行此命令**。
@@ -92,26 +94,16 @@ MSYS_NO_PATHCONV=1 docker exec spark-master bash /opt/scripts/build.sh
 
 ```bash
 # 任务 1：Session 聚合统计 + Top10 品类 + 页面单跳转化率（运行时间约 5-10 min）
-MSYS_NO_PATHCONV=1 docker exec spark-master bash -c \
-  "/opt/spark/bin/spark-submit \
-   --class com.useranalyzer.UserActionAnalyzerApp \
-   --driver-memory 4g \
-   /opt/spark-apps/user-analyzer-1.0-SNAPSHOT.jar 1"
+docker exec spark-master /opt/spark/bin/spark-submit --class com.useranalyzer.UserActionAnalyzerApp --driver-memory 4g /opt/spark-apps/user-analyzer-1.0-SNAPSHOT.jar 1
 
 # 任务 2：仅热门品类 Top10
-MSYS_NO_PATHCONV=1 docker exec spark-master bash -c \
-  "/opt/spark/bin/spark-submit \
-   --class com.useranalyzer.UserActionAnalyzerApp \
-   --driver-memory 4g \
-   /opt/spark-apps/user-analyzer-1.0-SNAPSHOT.jar 2"
+docker exec spark-master /opt/spark/bin/spark-submit --class com.useranalyzer.UserActionAnalyzerApp --driver-memory 4g /opt/spark-apps/user-analyzer-1.0-SNAPSHOT.jar 2
 
 # 任务 3：随机抽取 1000 个 Session（运行时间约 2-3 min）
-MSYS_NO_PATHCONV=1 docker exec spark-master bash -c \
-  "/opt/spark/bin/spark-submit \
-   --class com.useranalyzer.UserActionAnalyzerApp \
-   --driver-memory 4g \
-   /opt/spark-apps/user-analyzer-1.0-SNAPSHOT.jar 3"
+docker exec spark-master /opt/spark/bin/spark-submit --class com.useranalyzer.UserActionAnalyzerApp --driver-memory 4g /opt/spark-apps/user-analyzer-1.0-SNAPSHOT.jar 3
 ```
+
+> **注意**：命令使用单行格式，Git Bash 和 PowerShell 均可直接执行。
 
 ---
 
@@ -165,6 +157,49 @@ LIMIT 10;
 
 ---
 
+## 第七步：启动可视化后端（可选）
+
+`backend/` 目录包含一个 Spring Boot 服务，读取 MySQL 中的分析结果并通过 REST API 对外提供数据，同时内嵌了一个可视化页面。
+
+### 前置要求
+
+| 工具 | 最低版本 | 检查命令 |
+|------|---------|---------|
+| Java | 17 | `java -version` |
+| Maven | 3.8 | `mvn -version` |
+
+### 启动服务
+
+```bash
+cd backend
+mvn spring-boot:run
+```
+
+服务默认监听 `8082` 端口，context path 为 `/api`。
+
+### 访问地址
+
+| 页面 | 地址 |
+|------|------|
+| 可视化看板 | http://localhost:8082/api/ |
+| Swagger API 文档 | http://localhost:8082/api/swagger-ui.html |
+
+### 可用接口
+
+| 接口 | 说明 | 图表类型 |
+|------|------|---------|
+| `GET /api/analytics/session/length-distribution` | Session 时长分布 | 折线图 |
+| `GET /api/analytics/session/step-distribution` | Session 步长分布 | 柱状图 |
+| `GET /api/analytics/session/summary` | Session 汇总占比 | 饼图 |
+| `GET /api/analytics/category/top10` | 热门品类 Top10 | 柱状图 |
+| `GET /api/analytics/page/conversion-rate` | 页面单跳转化率 | 折线图 |
+
+所有接口均支持 `?taskId=` 参数（默认为 1），对应 Spark 分析时写入的任务 ID。
+
+> **注意**：需要先完成第三步至第五步，MySQL 中有分析结果后，可视化页面才能正常展示数据。
+
+---
+
 ## 停止 & 清理
 
 ```bash
@@ -178,9 +213,54 @@ docker compose down
 docker compose down -v
 ```
 
+### 重置旧环境（重新部署前推荐执行）
+
+如果之前跑过本项目，再次启动前建议先清理干净，避免网络/卷冲突：
+
+```bash
+# 1. 删除本项目的容器、网络、数据卷
+docker compose down -v
+
+# 2. 清理残留的同名容器（避免 container name conflict，报错可忽略）
+docker rm -f spark-master spark-worker-1 mysql
+
+# 3. 清理孤立网络（解决 subnet 冲突）
+docker network prune -f
+
+# 4. 重新启动
+docker compose up -d --build
+```
+
+> 如果只报网络冲突但不想删数据卷，可跳过第 1 步，只执行第 2-3 步。
+
 ---
 
 ## 常见问题
+
+### Q: 容器启动后立刻退出，`docker logs spark-master` 显示 `exec /entrypoint.sh: no such file or directory`
+
+镜像是旧版本构建的，缺少 `entrypoint.sh`。强制重新构建：
+```bash
+docker compose up -d --build spark-master spark-worker
+```
+
+### Q: 容器启动后报 `/opt/spark/conf/spark-env.sh: line N: $'\r': command not found`
+
+Windows 上 Git 检出时可能将脚本换行符转成了 CRLF，Linux 容器无法执行。在项目根目录执行以下命令修复，然后重新构建：
+
+**Git Bash：**
+```bash
+sed -i 's/\r//' entrypoint.sh conf/spark-env.sh scripts/build.sh scripts/submit_job.sh
+docker compose up -d --build spark-master spark-worker
+```
+
+**PowerShell：**
+```powershell
+foreach ($f in @("entrypoint.sh","conf/spark-env.sh","scripts/build.sh","scripts/submit_job.sh")) {
+    (Get-Content $f -Raw) -replace "`r`n", "`n" | Set-Content $f -NoNewline
+}
+docker compose up -d --build spark-master spark-worker
+```
 
 ### Q: `WARN TaskSchedulerImpl: Initial job has not accepted any resources`
 Worker 资源暂时未分配给 local 模式作业，属于正常警告，不影响运行。任务会在几秒后继续。
@@ -196,6 +276,16 @@ MSYS_NO_PATHCONV=1 docker exec spark-master bash -c "cd /opt/spark-project && mv
 
 ### Q: MySQL 中文字符乱码（字段显示 `???`）
 需要用 Python 写入含中文的 SQL 字段，不要用 `docker exec mysql -e "..."` 方式（Git Bash on Windows 会双重编码）。
+
+### Q: 启动报 `invalid pool request: Pool overlaps with other one on this address space`
+
+Docker 网络子网与已有网络冲突（通常是之前运行过本项目留下的残留网络）。执行以下命令清理后重试：
+
+```bash
+docker compose down -v
+docker network prune -f
+docker compose up -d --build
+```
 
 ### Q: 如何修改采样率
 编辑 `spark-project/src/main/resources/config.properties`：
