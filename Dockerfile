@@ -54,7 +54,9 @@ COPY conf/spark-env.sh ${SPARK_HOME}/conf/spark-env.sh
 # 复制脚本
 COPY scripts/ /opt/scripts/
 COPY scripts/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh \
+RUN sed -i 's/\r//' /entrypoint.sh \
+    && find /opt/scripts -name "*.sh" -exec sed -i 's/\r//' {} \; \
+    && chmod +x /entrypoint.sh \
     && find /opt/scripts -name "*.sh" -exec chmod +x {} \;
 
 WORKDIR /opt/spark
