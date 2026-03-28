@@ -24,9 +24,9 @@ cd "$PROJECT_DIR"
 java -version
 mvn -version
 
-# 编译并打包（跳过测试以加速，使用阿里云 Maven 镜像加速依赖下载）
-mvn clean package -DskipTests -q \
-    -s <(cat <<'SETTINGS'
+# 写入阿里云 Maven 镜像配置（加速国内依赖下载）
+MAVEN_SETTINGS=$(mktemp /tmp/maven-settings-XXXXXX.xml)
+cat > "$MAVEN_SETTINGS" <<'SETTINGS'
 <settings>
   <mirrors>
     <mirror>
@@ -38,7 +38,10 @@ mvn clean package -DskipTests -q \
   </mirrors>
 </settings>
 SETTINGS
-)
+
+# 编译并打包（跳过测试以加速）
+mvn clean package -DskipTests -q -s "$MAVEN_SETTINGS"
+rm -f "$MAVEN_SETTINGS"
 
 # 找到编译后的 JAR（shade 插件生成的版本）
 JAR=$(find target -name "*.jar" ! -name "*original*" | head -1)
