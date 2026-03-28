@@ -30,6 +30,8 @@ ${SPARK_HOME}/bin/spark-submit \
     --executor-memory 1g \
     --executor-cores 1 \
     --num-executors 1 \
+    --conf "spark.driver.extraJavaOptions=-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8" \
+    --conf "spark.executor.extraJavaOptions=-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8" \
     --class "$MAIN_CLASS" \
     "$JAR_PATH" \
     "$TASK_ID"

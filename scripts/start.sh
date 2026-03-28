@@ -82,6 +82,8 @@ docker exec spark-master \
     --executor-memory 1g \
     --executor-cores 1 \
     --num-executors 1 \
+    --conf "spark.driver.extraJavaOptions=-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8" \
+    --conf "spark.executor.extraJavaOptions=-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8" \
     --class com.useranalyzer.UserActionAnalyzerApp \
     "/opt/spark-apps/$JAR_NAME" \
     "$TASK_ID"
