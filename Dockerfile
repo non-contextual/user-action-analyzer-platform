@@ -48,7 +48,7 @@ RUN pip3 install --no-cache-dir \
     -i https://pypi.tuna.tsinghua.edu.cn/simple \
     --trusted-host pypi.tuna.tsinghua.edu.cn \
     faker==20.1.0 \
-    pandas==2.1.4 \
+    pandas==2.0.3 \
     numpy==1.26.3 \
     mysql-connector-python==8.0.33
 
