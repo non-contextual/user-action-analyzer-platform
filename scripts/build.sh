@@ -39,8 +39,9 @@ cat > "$MAVEN_SETTINGS" <<'SETTINGS'
 </settings>
 SETTINGS
 
-# 编译并打包（跳过测试以加速）
-mvn clean package -DskipTests -q -s "$MAVEN_SETTINGS"
+# 编译并打包（跳过测试，--batch-mode 显示下载进度但不交互）
+echo "正在下载依赖并编译，首次运行需要几分钟..."
+mvn clean package -DskipTests --batch-mode -s "$MAVEN_SETTINGS"
 rm -f "$MAVEN_SETTINGS"
 
 # 找到编译后的 JAR（shade 插件生成的版本）
