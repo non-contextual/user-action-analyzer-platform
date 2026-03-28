@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [0.1.2.0] - 2026-03-28
 
+### Performance
+- **Spark/KaggleDataLoader**: 采样后立即 `.cache()`，9GB CSV 从被扫描 5-6 次降为 1 次，后续所有分析模块（uva、user_info、各任务）均从内存读取
+- **Spark/Top10CategoryAnalyze**: 过滤后的 `uva_top10` 加 cache，点击/下单/支付三次统计查询不再重复扫描原始视图
+- **Spark/UserVisitSessionAnalyze**: 移除两处纯日志用途的 `count()` 调用，减少 2 个冗余 Spark job
+- **Spark/PageConvertRate**: `uva_page` 和 `page_transitions` 加 cache，N 对页面转化率查询从"每对重跑 LAG 窗口"变为内存查询
+- **Spark/RandomSessionExtract**: 用 `orderBy(rand(42)).limit(N)` 替代 collect 全量 session ID 到 driver 再 shuffle，彻底消除 driver 侧 OOM 风险
+
 ### Fixed
 - **Scripts**: `start.sh` 在提交 Spark 作业前新增清理步骤——`pkill` 容器内残留的 `SparkSubmit` / `UserActionAnalyzerApp` 进程，并轮询 Spark REST API 等待旧应用注销（最多 30s），彻底避免 Ctrl+C 中断后重启时双 driver 爆内存
 - **Scripts**: `submit_job.sh` 同步加入上述清理逻辑，直接调用该脚本时同样受保护
