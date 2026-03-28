@@ -15,11 +15,17 @@ RUN apt-get update && apt-get install -y \
     netcat-openbsd \
     procps \
     vim \
+    locales \
+    && locale-gen en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
 
 # Java 环境变量
 ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 ENV PATH=$PATH:$JAVA_HOME/bin
+# 强制所有 JVM 进程使用 UTF-8，解决中文日志乱码
+ENV JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8"
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
 
 # 安装 Spark 3.5.3
 ENV SPARK_VERSION=3.5.3
