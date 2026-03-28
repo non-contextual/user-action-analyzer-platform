@@ -70,8 +70,7 @@ public class UserVisitSessionAnalyze {
             userDF.createOrReplaceTempView("user_info");
         }
 
-        System.out.println("[Session分析] 行为数据总行数: " + spark.table("uva").count());
-        System.out.println("[Session分析] 用户数据总行数: " + spark.table("user_info").count());
+        // count() 调用已移除：纯日志用途但会触发完整扫描，实际行数在 KaggleDataLoader 中已打印
 
         // ----------------------------------------------------------------
         // 4. 构建 SQL 过滤条件（使用 trim() 防止 CRLF/空格问题）

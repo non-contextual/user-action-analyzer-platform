@@ -60,24 +60,28 @@ public class PageConvertRate {
         if (startDate != null) dateWhere.append(" AND trim(date) >= '").append(startDate).append("'");
         if (endDate   != null) dateWhere.append(" AND trim(date) <= '").append(endDate).append("'");
 
+        // 缓存 uva_page：后续 N 对查询（分母）都从内存读
         spark.sql(
             "SELECT CAST(session_id AS STRING) AS session_id, " +
             "  CAST(page_id AS BIGINT) AS page_id, " +
             "  action_time " +
             "FROM uva " + dateWhere +
             " AND session_id IS NOT NULL AND page_id IS NOT NULL"
-        ).createOrReplaceTempView("uva_page");
+        ).cache().createOrReplaceTempView("uva_page");
 
         // ----------------------------------------------------------------
         // 3. 计算每行的前一页（LAG 窗口函数，同一 Session 内按时间排序）
+        //    缓存 page_transitions：后续 N 对查询（分子）都从内存读
         // ----------------------------------------------------------------
         spark.sql(
             "SELECT session_id, page_id, " +
             "  LAG(page_id, 1) OVER (PARTITION BY session_id ORDER BY action_time) AS prev_page " +
             "FROM uva_page"
-        ).createOrReplaceTempView("page_transitions");
+        ).cache().createOrReplaceTempView("page_transitions");
 
-        System.out.println("[页面转化率] 页面转移视图已创建");
+        // 触发两个视图的 cache 物化（一次扫描，后续全走内存）
+        long pageRowCount = spark.sql("SELECT COUNT(*) FROM page_transitions").first().getLong(0);
+        System.out.println("[页面转化率] 页面转移视图已创建，共 " + pageRowCount + " 条转移记录");
 
         // ----------------------------------------------------------------
         // 4. 解析 targetPageFlow，逐对计算转化率

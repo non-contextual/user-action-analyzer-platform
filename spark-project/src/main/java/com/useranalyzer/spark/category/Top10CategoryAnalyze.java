@@ -60,9 +60,11 @@ public class Top10CategoryAnalyze {
                 .and(df.col("date").$less$eq(endDate))
             );
         }
+        // 缓存过滤结果：后续三次统计（click/order/pay）都从内存读，无需重复扫描 uva
+        df = df.cache();
         df.createOrReplaceTempView("uva_top10");
 
-        System.out.println("[Top10品类] 行为数据行数: " + df.count());
+        System.out.println("[Top10品类] 行为数据行数: " + df.count()); // 同时触发 cache 物化
 
         // ----------------------------------------------------------------
         // 4. 点击次数统计

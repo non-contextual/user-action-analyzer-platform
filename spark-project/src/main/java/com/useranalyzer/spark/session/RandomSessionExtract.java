@@ -6,12 +6,11 @@ import com.useranalyzer.util.JDBCHelper;
 import com.useranalyzer.util.ParamUtils;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 随机抽取 Session 分析
@@ -52,42 +51,24 @@ public class RandomSessionExtract {
         }
 
         // ----------------------------------------------------------------
-        // 2. 按日期过滤，获取所有 session_id
+        // 2. 按日期过滤，在 Spark 内完成随机采样后注册为临时视图
+        //    避免把全量 session ID（可能 200万+）collect 到 driver 再 shuffle，
+        //    防止 driver OOM，同时省去一次 collect + 一次 createDataset 的开销
         // ----------------------------------------------------------------
         StringBuilder dateWhere = new StringBuilder(
                 "WHERE session_id IS NOT NULL AND trim(session_id) != ''");
         if (startDate != null) dateWhere.append(" AND trim(date) >= '").append(startDate).append("'");
         if (endDate   != null) dateWhere.append(" AND trim(date) <= '").append(endDate).append("'");
 
-        List<Row> allRows = spark.sql(
+        // rand(42) 保证可复现，orderBy 后 limit 直接在 Spark 端完成采样
+        spark.sql(
                 "SELECT DISTINCT session_id FROM uva " + dateWhere
-        ).collectAsList();
+        ).orderBy(org.apache.spark.sql.functions.rand(42))
+         .limit(extractNumber)
+         .createOrReplaceTempView("sampled_session_ids");
 
-        System.out.println("[随机抽取Session] 全量 Session 数: " + allRows.size());
-
-        if (allRows.isEmpty()) {
-            System.out.println("[随机抽取Session] 无可用 Session，跳过");
-            return;
-        }
-
-        // ----------------------------------------------------------------
-        // 3. 随机洗牌并取前 N 个
-        // ----------------------------------------------------------------
-        List<String> allIds = allRows.stream()
-                .map(r -> r.getString(0))
-                .collect(Collectors.toList());
-        Collections.shuffle(allIds, new Random(42));
-        int n = Math.min(extractNumber, allIds.size());
-        List<String> sampledIds = new ArrayList<>(allIds.subList(0, n));
-
-        System.out.println("[随机抽取Session] 实际抽取: " + sampledIds.size() + " 个 Session");
-
-        // ----------------------------------------------------------------
-        // 4. 注册抽样 Session ID 为临时视图（避免超长 IN 子句）
-        // ----------------------------------------------------------------
-        spark.createDataset(sampledIds, Encoders.STRING())
-                .toDF("session_id")
-                .createOrReplaceTempView("sampled_session_ids");
+        long actualCount = spark.sql("SELECT COUNT(*) FROM sampled_session_ids").first().getLong(0);
+        System.out.println("[随机抽取Session] 实际抽取: " + actualCount + " 个 Session");
 
         // ----------------------------------------------------------------
         // 5. 计算每个 Session 的摘要
