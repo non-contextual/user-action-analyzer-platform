@@ -1,7 +1,6 @@
 # 直接用官方 Spark 镜像：JDK 11 + Spark 3.5.3 + Python 3 全部内置
 # 省去 apt 装 JDK（~10min）和 wget 下载 Spark（~15min）
-# 国内用 DaoCloud 镜像代理拉取，速度更快；如在境外可改回 apache/spark:...
-FROM docker.m.daocloud.io/apache/spark:3.5.3-scala2.12-java11-python3-ubuntu
+FROM apache/spark:3.5.3-scala2.12-java11-python3-ubuntu
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Shanghai
