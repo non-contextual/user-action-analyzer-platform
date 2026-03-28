@@ -49,7 +49,7 @@ RUN pip3 install --no-cache-dir \
     --trusted-host pypi.tuna.tsinghua.edu.cn \
     faker==20.1.0 \
     pandas==2.0.3 \
-    numpy==1.26.3 \
+    numpy==1.24.4 \
     mysql-connector-python==8.0.33
 
 # 创建工作目录
