@@ -1,16 +1,16 @@
-FROM ubuntu:22.04
+# 直接用官方 Spark 镜像：JDK 11 + Spark 3.5.3 + Python 3 全部内置
+# 省去 apt 装 JDK（~10min）和 wget 下载 Spark（~15min）
+FROM apache/spark:3.5.3-scala2.12-java11-python3-ubuntu
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Shanghai
 
-# 安装基础依赖
+USER root
+
+# 只装项目额外需要的工具，包数量从 290 降到 ~20
 RUN apt-get update && apt-get install -y \
-    openjdk-11-jdk \
-    python3 \
-    python3-pip \
     maven \
     git \
-    wget \
     curl \
     netcat-openbsd \
     procps \
@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
     && locale-gen en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
 
-# Java 环境变量
+# Java 环境变量（官方镜像已设置 JAVA_HOME，这里保持兼容）
 ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 ENV PATH=$PATH:$JAVA_HOME/bin
 # 强制所有 JVM 进程使用 UTF-8，解决中文日志乱码
@@ -27,17 +27,10 @@ ENV JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8"
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 
-# 安装 Spark 3.5.3
-ENV SPARK_VERSION=3.5.3
+# Spark 路径（官方镜像已设置）
 ENV SPARK_HOME=/opt/spark
 ENV PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin
 ENV PYSPARK_PYTHON=python3
-
-RUN wget -q "https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop3.tgz" \
-    -O /tmp/spark.tgz \
-    && tar -xzf /tmp/spark.tgz -C /opt/ \
-    && mv /opt/spark-${SPARK_VERSION}-bin-hadoop3 ${SPARK_HOME} \
-    && rm /tmp/spark.tgz
 
 # 下载 MySQL Connector/J (Spark 写入 MySQL 所需)
 RUN wget -q "https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.0.33/mysql-connector-j-8.0.33.jar" \
