@@ -57,10 +57,14 @@ public class KaggleDataLoader {
             raw = raw.sample(false, sampleRate, 42L);
             System.out.println("[KaggleLoader] 采样后注册原始视图...");
         }
+
+        // 缓存采样结果：让后续所有查询（uva、user_info、各分析模块）都从内存读取，
+        // 避免每次触发 action 时重新扫描整个 9GB CSV 文件。
+        raw = raw.cache();
         raw.createOrReplaceTempView("kaggle_raw");
 
-        long rawCount = raw.count();
-        System.out.println("[KaggleLoader] 原始行数: " + rawCount);
+        long rawCount = raw.count(); // 同时触发 cache 物化，只扫一次文件
+        System.out.println("[KaggleLoader] 原始行数（已缓存）: " + rawCount);
 
         // ----------------------------------------------------------------
         // 2. 转换为 UVA 格式，注册 uva 视图
