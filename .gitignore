@@ -42,3 +42,4 @@ __pycache__/
 .env.local
 电商用户行为分析大数据平台项目计划书.pdf
 .claude/settings.local.json
+.gstack/
