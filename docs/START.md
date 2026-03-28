@@ -243,6 +243,22 @@ docker compose up -d --build
 
 ## 常见问题
 
+### Q: `docker compose build` 报 `parent snapshot does not exist: not found`
+
+Docker 本地构建缓存损坏。清理 builder 缓存后重建：
+
+```bash
+docker builder prune -f
+docker compose build --no-cache spark-master spark-worker
+```
+
+如果仍然失败，执行更彻底的清理（会删除所有未使用的镜像和缓存）：
+
+```bash
+docker system prune -f
+docker compose build --no-cache spark-master spark-worker
+```
+
 ### Q: `docker compose up` 报 `network subnet overlaps with other one`
 
 Docker 网络子网与已有网络冲突，通常是之前运行过本项目留下的残留网络。执行以下命令清理后重试：
