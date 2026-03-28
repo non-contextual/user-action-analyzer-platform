@@ -24,8 +24,21 @@ cd "$PROJECT_DIR"
 java -version
 mvn -version
 
-# 编译并打包（跳过测试以加速）
-mvn clean package -DskipTests -q
+# 编译并打包（跳过测试以加速，使用阿里云 Maven 镜像加速依赖下载）
+mvn clean package -DskipTests -q \
+    -s <(cat <<'SETTINGS'
+<settings>
+  <mirrors>
+    <mirror>
+      <id>aliyun</id>
+      <mirrorOf>central</mirrorOf>
+      <name>阿里云 Maven 镜像</name>
+      <url>https://maven.aliyun.com/repository/central</url>
+    </mirror>
+  </mirrors>
+</settings>
+SETTINGS
+)
 
 # 找到编译后的 JAR（shade 插件生成的版本）
 JAR=$(find target -name "*.jar" ! -name "*original*" | head -1)

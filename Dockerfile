@@ -7,6 +7,10 @@ ENV TZ=Asia/Shanghai
 
 USER root
 
+# 切换 apt 源为清华镜像，加速国内构建
+RUN sed -i 's|http://archive.ubuntu.com/ubuntu|https://mirrors.tuna.tsinghua.edu.cn/ubuntu|g' /etc/apt/sources.list \
+    && sed -i 's|http://security.ubuntu.com/ubuntu|https://mirrors.tuna.tsinghua.edu.cn/ubuntu|g' /etc/apt/sources.list
+
 # 只装项目额外需要的工具，包数量从 290 降到 ~20
 RUN apt-get update && apt-get install -y \
     maven \
@@ -32,12 +36,16 @@ ENV SPARK_HOME=/opt/spark
 ENV PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin
 ENV PYSPARK_PYTHON=python3
 
-# 下载 MySQL Connector/J (Spark 写入 MySQL 所需)
-RUN wget -q "https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.0.33/mysql-connector-j-8.0.33.jar" \
+# 下载 MySQL Connector/J，优先用阿里云 Maven 镜像，失败则回退官方源
+RUN wget -q "https://maven.aliyun.com/repository/central/com/mysql/mysql-connector-j/8.0.33/mysql-connector-j-8.0.33.jar" \
+    -O ${SPARK_HOME}/jars/mysql-connector-j-8.0.33.jar \
+    || wget -q "https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.0.33/mysql-connector-j-8.0.33.jar" \
     -O ${SPARK_HOME}/jars/mysql-connector-j-8.0.33.jar
 
-# 安装 Python 依赖
+# 安装 Python 依赖，使用清华 pip 镜像
 RUN pip3 install --no-cache-dir \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple \
+    --trusted-host pypi.tuna.tsinghua.edu.cn \
     faker==20.1.0 \
     pandas==2.1.4 \
     numpy==1.26.3 \
