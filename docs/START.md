@@ -302,6 +302,17 @@ data.kaggle.sample=1.0    # 全量 42M 行，需要更多内存
 
 修改后需重新执行第四步编译部署 JAR。
 
+### Q: 中断任务后重新提交，容器 OOM 崩溃
+
+Ctrl+C 终止 `docker exec ... submit_job.sh` 时，宿主机进程退出，但容器内的 Spark driver JVM 仍在运行。立刻再次提交会出现两个 driver 同时占用内存，导致 OOM。
+
+`submit_job.sh` 已内置自动清理：每次提交前会 `pkill` 残留的 `SparkSubmit` 进程，并等待旧作业从 Spark Master 注销（最多 30 秒）。只要通过脚本提交，无需手动干预。
+
+若使用裸 `spark-submit` 命令提交，需先手动清理：
+```bash
+docker exec spark-master bash -c "pkill -f SparkSubmit 2>/dev/null; sleep 5"
+```
+
 ### Q: MySQL 中文字符乱码
 
 不要用 `docker exec mysql mysql -e "..."` 方式直接执行含中文的 SQL（Git Bash on Windows 会双重编码），改用 `-it` 进入交互式 shell 后再执行 SQL。

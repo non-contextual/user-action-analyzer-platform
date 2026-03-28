@@ -92,17 +92,18 @@
 ```bash
 # 重新编译（新增功能后需要）
 docker exec spark-master bash /opt/scripts/build.sh
-docker exec spark-master bash -c "cp /opt/spark-project/target/user-analyzer-1.0-SNAPSHOT.jar /opt/spark-apps/"
 
 # 任务 1：Session 聚合 + Top10 + 页面转化率
-docker exec spark-master bash -c "/opt/spark/bin/spark-submit --class com.useranalyzer.UserActionAnalyzerApp --driver-memory 4g /opt/spark-apps/user-analyzer-1.0-SNAPSHOT.jar 1"
+docker exec spark-master bash /opt/scripts/submit_job.sh user-analyzer-1.0-SNAPSHOT.jar 1
 
 # 任务 2：热门品类 Top10
-docker exec spark-master bash -c "/opt/spark/bin/spark-submit --class com.useranalyzer.UserActionAnalyzerApp --driver-memory 4g /opt/spark-apps/user-analyzer-1.0-SNAPSHOT.jar 2"
+docker exec spark-master bash /opt/scripts/submit_job.sh user-analyzer-1.0-SNAPSHOT.jar 2
 
 # 任务 3：随机抽取 Session
-docker exec spark-master bash -c "/opt/spark/bin/spark-submit --class com.useranalyzer.UserActionAnalyzerApp --driver-memory 4g /opt/spark-apps/user-analyzer-1.0-SNAPSHOT.jar 3"
+docker exec spark-master bash /opt/scripts/submit_job.sh user-analyzer-1.0-SNAPSHOT.jar 3
 ```
+
+> `submit_job.sh` 会在提交前自动清理残留进程，避免重启时因双 driver 导致 OOM。
 
 ---
 

@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2.0] - 2026-03-28
+
+### Fixed
+- **Scripts**: `start.sh` 在提交 Spark 作业前新增清理步骤——`pkill` 容器内残留的 `SparkSubmit` / `UserActionAnalyzerApp` 进程，并轮询 Spark REST API 等待旧应用注销（最多 30s），彻底避免 Ctrl+C 中断后重启时双 driver 爆内存
+- **Scripts**: `submit_job.sh` 同步加入上述清理逻辑，直接调用该脚本时同样受保护
+- **Scripts**: `start.sh` spark-submit 恢复使用 `spark://spark-master:7077` 独立集群模式，executors 运行在 worker 节点而非 driver 进程内
+- **Scripts**: `build.sh` Maven 构建参数由 `-q` 改为 `--batch-mode`，保留依赖下载进度输出，方便排查编译卡顿
+- **Dockerfile**: Spark 基础镜像源切换为 `hub.rat.dev` 镜像站，解决国内网络环境下 DaoCloud TLS 超时问题
+
 ## [0.1.1.0] - 2026-03-24
 
 ### Fixed
