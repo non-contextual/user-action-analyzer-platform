@@ -23,6 +23,19 @@ echo "  JAR: $JAR_PATH"
 echo "  主类: $MAIN_CLASS"
 echo "  任务ID: $TASK_ID"
 
+# 杀掉残留的旧 driver 进程，防止重启时双 driver 爆内存
+echo "--- 清理残留 Spark 进程 ---"
+pkill -f 'SparkSubmit' 2>/dev/null || true
+pkill -f 'UserActionAnalyzerApp' 2>/dev/null || true
+# 等待 Spark Master 注销旧应用（最多 30s）
+for i in $(seq 1 15); do
+    RUNNING=$(curl -sf http://localhost:8080/api/v1/applications 2>/dev/null \
+        | grep -c '"state":"RUNNING"' || echo 0)
+    if [ "$RUNNING" = "0" ]; then break; fi
+    echo "  等待旧作业退出... ($i/15)"
+    sleep 2
+done
+
 ${SPARK_HOME}/bin/spark-submit \
     --master spark://spark-master:7077 \
     --deploy-mode client \
