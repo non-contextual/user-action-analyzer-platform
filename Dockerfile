@@ -1,6 +1,6 @@
 # 直接用官方 Spark 镜像：JDK 11 + Spark 3.5.3 + Python 3 全部内置
 # 省去 apt 装 JDK（~10min）和 wget 下载 Spark（~15min）
-FROM dockerproxy.cn/apache/spark:3.5.3-scala2.12-java11-python3-ubuntu
+FROM hub.rat.dev/apache/spark:3.5.3-scala2.12-java11-python3-ubuntu
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Shanghai
