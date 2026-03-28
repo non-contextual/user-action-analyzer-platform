@@ -42,7 +42,7 @@ cd user-action-analyzer-platform
 3. 确认 `spark-project/src/main/resources/config.properties` 中配置为：
    ```properties
    data.format=kaggle
-   data.kaggle.sample=0.1    # 10% 采样，约 4.2M 行，运行时间约 5 分钟
+   data.kaggle.sample=0.01   # 1% 采样，约 42 万行，运行时间约 1-2 分钟
    ```
 
 ### 方式 B：模拟数据（轻量，适合快速验证）
