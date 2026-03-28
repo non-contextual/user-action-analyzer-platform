@@ -24,9 +24,14 @@ echo "  主类: $MAIN_CLASS"
 echo "  任务ID: $TASK_ID"
 
 ${SPARK_HOME}/bin/spark-submit \
-    --master local[*] \
-    --driver-memory 4g \
+    --master spark://spark-master:7077 \
+    --deploy-mode client \
+    --driver-memory 1g \
+    --executor-memory 1g \
+    --executor-cores 1 \
+    --num-executors 1 \
     --conf "spark.driver.extraJavaOptions=-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8" \
+    --conf "spark.executor.extraJavaOptions=-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8" \
     --class "$MAIN_CLASS" \
     "$JAR_PATH" \
     "$TASK_ID"
