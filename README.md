@@ -16,7 +16,7 @@
 | 组件 | 版本 | 用途 |
 |------|------|------|
 | Java | 11 | 主开发语言 |
-| Apache Spark | 3.5.3 | 大数据分析引擎 |
+| Apache Spark | 3.5.3 | 大数据分析引擎（Core / SQL / MLlib） |
 | MySQL | 8.0 | 任务参数 & 结果存储 |
 | Maven | 3.x | 项目构建 |
 | Docker Compose | 3.8 | 容器化部署 |
@@ -29,6 +29,8 @@
 | 1 | SESSION | Session 聚合统计（时长/步长分布）+ Top10 品类 + 页面单跳转化率 | `session_aggr_stat`, `top10_category`, `page_convert_rate` |
 | 2 | TOP10 | 热门品类 Top10（点击/下单/支付次数排序） | `top10_category` |
 | 3 | RANDOM | 随机抽取 Session（附明细行为） | `session_random_extract`, `session_detail` |
+| 4 | PROFILE | 用户行为分层（RFM 简化版：VIP / 高价值 / 潜力 / 普通 / 沉默） | `user_level_stat` |
+| 5 | ASSOCIATION | 商品关联规则挖掘（Spark MLlib FP-Growth，用户级品类篮子） | `product_association` |
 
 ## 项目结构
 
@@ -61,8 +63,12 @@ UserActionAnalyzerPlatform/
         │   │   └── RandomSessionExtract.java       # 随机抽取 Session
         │   ├── category/
         │   │   └── Top10CategoryAnalyze.java       # 热门品类 Top10
-        │   └── page/
-        │       └── PageConvertRate.java            # 页面单跳转化率
+        │   ├── page/
+        │   │   └── PageConvertRate.java            # 页面单跳转化率
+        │   ├── profile/
+        │   │   └── UserProfileAnalyze.java         # 用户行为分层（RFM）
+        │   └── association/
+        │       └── ProductAssociationAnalyze.java  # 商品关联规则（FP-Growth）
         └── util/
             ├── KaggleDataLoader.java           # Kaggle 数据加载 & 转换
             ├── JDBCHelper.java                 # MySQL JDBC 工具

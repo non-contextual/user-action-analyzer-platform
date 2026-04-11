@@ -51,6 +51,14 @@
             <version>2.0.43</version>
         </dependency>
 
+        <!-- Spark MLlib (FP-Growth 关联规则挖掘) -->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-mllib_${scala.version}</artifactId>
+            <version>${spark.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- JUnit 测试 -->
         <dependency>
             <groupId>junit</groupId>

@@ -108,6 +108,18 @@
             <h2>会话汇总</h2>
             <div id="sessionSummaryChart" class="chart-container"></div>
         </div>
+
+        <div class="card">
+            <h2>用户行为分层分布</h2>
+            <p style="color:#888;font-size:13px;margin-top:-6px;">基于购买次数与消费金额的 RFM 行为分层（VIP / 高价值 / 潜力 / 普通 / 沉默）</p>
+            <div id="userLevelChart" class="chart-container"></div>
+        </div>
+
+        <div class="card">
+            <h2>商品关联规则（FP-Growth）</h2>
+            <p style="color:#888;font-size:13px;margin-top:-6px;">用户购买品类之间的强关联规则，按置信度排序</p>
+            <div id="associationTableContainer" style="overflow-x:auto;"></div>
+        </div>
     </div>
 
     <script>
@@ -192,26 +204,39 @@
 
         function initPageConversionChart(data) {
             const chart = echarts.init(document.getElementById('pageConversionChart'));
+            // 找最大值和最小值的索引，只标注这两个点避免所有点都有大红针
+            const maxIdx = data.series.indexOf(Math.max(...data.series));
+            const minIdx = data.series.indexOf(Math.min(...data.series));
             const option = {
-                title: { text: '页面转化率 (%)' },
-                tooltip: { trigger: 'axis', formatter: '{b}: {c}%' },
-                xAxis: { type: 'category', data: data.xAxis, name: '页面流程' },
-                yAxis: { type: 'value', name: '转化率 (%)', max: 100 },
+                title: { text: '页面单跳转化率 (%)' },
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: params => `${params[0].name}<br/>转化率: <b>${params[0].value}%</b>`
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data.xAxis,
+                    name: '页面跳转',
+                    axisLabel: { rotate: 30 }
+                },
+                yAxis: { type: 'value', name: '转化率 (%)', min: 0 },
                 series: [{
                     name: '转化率',
                     type: 'line',
                     data: data.series,
                     smooth: true,
-                    areaStyle: { opacity: 0.3 },
-                    itemStyle: { color: '#91cc75' },
+                    areaStyle: { opacity: 0.2, color: '#91cc75' },
+                    itemStyle: { color: '#52c41a' },
+                    lineStyle: { width: 2 },
+                    // 只在最高和最低点打标注
                     markPoint: {
-                        data: data.series.map((val, idx) => ({
-                            value: val,
-                            xAxis: idx,
-                            yAxis: val,
-                            itemStyle: { color: '#ff6b6b' }
-                        }))
-                    }
+                        symbolSize: 40,
+                        data: [
+                            { name: '最高', type: 'max', itemStyle: { color: '#52c41a' } },
+                            { name: '最低', type: 'min', itemStyle: { color: '#ff4d4f' } }
+                        ]
+                    },
+                    label: { show: true, formatter: '{c}%', fontSize: 11, color: '#333' }
                 }]
             };
             chart.setOption(option);
@@ -219,30 +244,100 @@
 
         function initSessionSummaryChart(data) {
             const chart = echarts.init(document.getElementById('sessionSummaryChart'));
+            // 固定颜色，刷新不变色
+            const palette = ['#5470c6','#a8d8a8','#73c0de','#3ba272','#fc8452','#9a60b4','#ea7ccc','#fac858','#ee6666'];
             const option = {
-                title: { text: '会话时长汇总' },
+                title: { text: '会话时长分布（汇总）' },
                 tooltip: { trigger: 'item', formatter: '{b}: {c} 个会话 ({d}%)' },
-                legend: { orient: 'vertical', left: 'left' },
+                // 横向 legend 放顶部，避免纵向被截断
+                legend: { orient: 'horizontal', top: '5%', type: 'scroll' },
                 series: [{
                     name: '时长分布',
                     type: 'pie',
-                    radius: ['40%', '70%'],
-                    avoidLabelOverlap: false,
-                    itemStyle: {
-                        borderRadius: 10,
-                        borderColor: '#fff',
-                        borderWidth: 2
-                    },
-                    label: { show: false },
-                    emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
-                    data: data.data.map(item => ({
+                    radius: ['35%', '65%'],
+                    center: ['50%', '60%'],
+                    avoidLabelOverlap: true,
+                    itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
+                    label: { show: true, formatter: '{b}\n{d}%', fontSize: 11 },
+                    emphasis: { label: { show: true, fontSize: 13, fontWeight: 'bold' } },
+                    data: data.data.map((item, i) => ({
                         value: item.value,
                         name: item.name,
-                        itemStyle: { color: getRandomColor() }
+                        itemStyle: { color: palette[i % palette.length] }
                     }))
                 }]
             };
             chart.setOption(option);
+        }
+
+        function initUserLevelChart(data) {
+            const chart = echarts.init(document.getElementById('userLevelChart'));
+            // 固定颜色映射，让每次刷新颜色一致
+            const colorMap = {
+                'VIP':   '#f5222d',
+                '高价值': '#fa8c16',
+                '潜力':  '#1890ff',
+                '普通':  '#52c41a',
+                '沉默':  '#bfbfbf'
+            };
+            const option = {
+                title: { text: '用户行为分层分布' },
+                tooltip: { trigger: 'item', formatter: '{b}: {c} 人 ({d}%)' },
+                legend: {
+                    orient: 'horizontal',
+                    bottom: 0,
+                    type: 'scroll',
+                    pageTextStyle: { color: '#666' }
+                },
+                series: [{
+                    name: '用户分层',
+                    type: 'pie',
+                    radius: ['35%', '65%'],
+                    center: ['50%', '45%'],
+                    avoidLabelOverlap: true,
+                    itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+                    label: { show: true, formatter: '{b}\n{d}%' },
+                    data: data.data.map(item => ({
+                        value: item.value,
+                        name: item.name,
+                        itemStyle: { color: colorMap[item.name] || '#999' }
+                    }))
+                }]
+            };
+            chart.setOption(option);
+        }
+
+        function renderAssociationTable(data) {
+            const container = document.getElementById('associationTableContainer');
+            if (!data || !data.rules || data.rules.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:40px;color:#999;">暂无数据（需先运行 taskId=5 的 FP-Growth 分析任务）</div>';
+                return;
+            }
+            const rows = data.rules.map((r, i) => `
+                <tr style="background:${i%2===0?'#fafafa':'#fff'}">
+                    <td style="padding:8px 12px;">${i+1}</td>
+                    <td style="padding:8px 12px;color:#1890ff;font-weight:500;">${r.antecedent}</td>
+                    <td style="padding:8px 12px;color:#52c41a;font-weight:500;">${r.consequent}</td>
+                    <td style="padding:8px 12px;text-align:right;">${(r.confidence * 100).toFixed(1)}%</td>
+                    <td style="padding:8px 12px;text-align:right;">${r.lift.toFixed(2)}</td>
+                    <td style="padding:8px 12px;text-align:right;">${(r.support * 100).toFixed(2)}%</td>
+                </tr>
+            `).join('');
+            container.innerHTML = `
+                <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                    <thead>
+                        <tr style="background:#001529;color:#fff;">
+                            <th style="padding:10px 12px;text-align:left;">#</th>
+                            <th style="padding:10px 12px;text-align:left;">前项品类 →</th>
+                            <th style="padding:10px 12px;text-align:left;">后项品类</th>
+                            <th style="padding:10px 12px;text-align:right;">置信度</th>
+                            <th style="padding:10px 12px;text-align:right;">提升度</th>
+                            <th style="padding:10px 12px;text-align:right;">支持度</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
         }
 
         function getRandomColor() {
@@ -252,12 +347,15 @@
 
         async function loadAllCharts() {
             try {
-                const [durationData, stepData, categoriesData, conversionData, summaryData] = await Promise.all([
+                const [durationData, stepData, categoriesData, conversionData, summaryData,
+                       userLevelData, associationData] = await Promise.all([
                     fetchWithRetry(`${API_BASE_URL}/analytics/session/length-distribution?taskId=${TASK_ID}`),
                     fetchWithRetry(`${API_BASE_URL}/analytics/session/step-distribution?taskId=${TASK_ID}`),
                     fetchWithRetry(`${API_BASE_URL}/analytics/category/top10?taskId=${TASK_ID}`),
                     fetchWithRetry(`${API_BASE_URL}/analytics/page/conversion-rate?taskId=${TASK_ID}`),
-                    fetchWithRetry(`${API_BASE_URL}/analytics/session/summary?taskId=${TASK_ID}`)
+                    fetchWithRetry(`${API_BASE_URL}/analytics/session/summary?taskId=${TASK_ID}`),
+                    fetchWithRetry(`${API_BASE_URL}/analytics/user/level-distribution?taskId=4`).catch(() => ({ code: 404 })),
+                    fetchWithRetry(`${API_BASE_URL}/analytics/association/rules?taskId=5`).catch(() => ({ code: 404 }))
                 ]);
 
                 document.getElementById('loading').style.display = 'none';
@@ -298,6 +396,19 @@
                     console.warn('会话汇总数据加载失败:', summaryData.message || '无数据');
                 }
 
+                if (userLevelData.code === 200 && userLevelData.data) {
+                    initUserLevelChart(userLevelData.data);
+                } else {
+                    document.getElementById('userLevelChart').innerHTML =
+                        '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#999;">暂无数据（请先运行 taskId=4 的 PROFILE 分析任务）</div>';
+                }
+
+                if (associationData.code === 200 && associationData.data) {
+                    renderAssociationTable(associationData.data);
+                } else {
+                    renderAssociationTable(null);
+                }
+
             } catch (error) {
                 document.getElementById('loading').innerHTML = `
                     <div class="error">
@@ -316,7 +427,8 @@
                 echarts.getInstanceByDom(document.getElementById('stepLengthChart')),
                 echarts.getInstanceByDom(document.getElementById('top10CategoriesChart')),
                 echarts.getInstanceByDom(document.getElementById('pageConversionChart')),
-                echarts.getInstanceByDom(document.getElementById('sessionSummaryChart'))
+                echarts.getInstanceByDom(document.getElementById('sessionSummaryChart')),
+                echarts.getInstanceByDom(document.getElementById('userLevelChart'))
             ];
             charts.forEach(chart => chart && chart.resize());
         });

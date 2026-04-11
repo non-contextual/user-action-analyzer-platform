@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0.0] - 2026-04-11
+
+### Added
+- **Spark/UserProfileAnalyze**: 用户行为分层分析（task 4, PROFILE 类型）。基于 kaggle_raw 真实事件数据计算每用户的购买次数、消费金额、加购次数、活跃天数，按 RFM 简化规则分为 VIP / 高价值 / 潜力 / 普通 / 沉默五级，汇总统计写入 `user_level_stat` 表（5行）
+- **Spark/ProductAssociationAnalyze**: 商品关联规则挖掘（task 5, ASSOCIATION 类型）。用用户级品类购物篮（`collect_set(category_code)` where `event_type=purchase`）运行 Spark MLlib FP-Growth，Top-20 规则按置信度排序写入 `product_association` 表；篮子数量 < 10 时跳过保护
+- **Spark/pom.xml**: 新增 `spark-mllib_2.12` 依赖（provided scope，不增大 fat jar）
+- **Backend**: `UserLevelStat` + `ProductAssociation` JPA 实体（复合主键 `@IdClass`）
+- **Backend**: `UserLevelStatRepository` + `ProductAssociationRepository`
+- **Backend**: `AssociationRuleData` DTO（含嵌套 `RuleItem`：antecedent / consequent / support / confidence / lift）
+- **Backend/AnalyticsController**: 新增两个 GET 接口——`/analytics/user/level-distribution?taskId=4` 和 `/analytics/association/rules?taskId=5`
+- **Backend/AnalyticsService**: 新增 `getUserLevelStat` 和 `getAssociationRules` 方法，含 Caffeine 缓存
+- **DB/init.sql**: 新增 `user_level_stat`、`product_association` 表定义，以及 task 4 / task 5 初始参数
+- **Frontend**: 用户行为分层饼图（固定颜色映射，VIP=红）+ FP-Growth 关联规则表格（暗色表头，置信度/提升度/支持度）；两个接口无数据时显示友好占位提示
+
+### Fixed
+- **Backend/AnalyticsService**: `getSessionLengthDistribution` 会话时长折线图缺少"4-6秒"和"7-9秒"两个区间——xAxis 从 7 项补全为 9 项，序列数据同步对齐
+
+### Changed
+- **Spark/UserActionAnalyzerApp**: 新增 PROFILE 和 ASSOCIATION 两个 task_type 路由分支
+- **Backend/AnalyticsService.clearCache**: evict 范围补充 `userLevelStats` 和 `associationRules`
+- **Docs**: README.md、START.md、TODOS.md 同步更新，新增任务 4/5 说明、接口文档、DB 表结构
+
 ## [0.1.2.0] - 2026-03-28
 
 ### Performance

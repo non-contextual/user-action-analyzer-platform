@@ -1,8 +1,10 @@
 package com.useranalyzer;
 
 import com.alibaba.fastjson.JSONObject;
+import com.useranalyzer.spark.association.ProductAssociationAnalyze;
 import com.useranalyzer.spark.category.Top10CategoryAnalyze;
 import com.useranalyzer.spark.page.PageConvertRate;
+import com.useranalyzer.spark.profile.UserProfileAnalyze;
 import com.useranalyzer.spark.session.RandomSessionExtract;
 import com.useranalyzer.spark.session.UserVisitSessionAnalyze;
 import com.useranalyzer.util.JDBCHelper;
@@ -19,9 +21,11 @@ import java.util.Properties;
  * 用法: spark-submit ... com.useranalyzer.UserActionAnalyzerApp <taskId>
  *
  * 任务类型路由（由 MySQL task.task_type 决定）:
- *   SESSION → Session聚合统计 + 热门品类Top10 + 页面单跳转化率（若有 targetPageFlow）
- *   TOP10   → 热门品类 Top10
- *   RANDOM  → 随机抽取 Session
+ *   SESSION     → Session聚合统计 + 热门品类Top10 + 页面单跳转化率（若有 targetPageFlow）
+ *   TOP10       → 热门品类 Top10
+ *   RANDOM      → 随机抽取 Session
+ *   PROFILE     → 用户画像与行为分层
+ *   ASSOCIATION → 商品关联规则挖掘（FP-Growth）
  */
 public class UserActionAnalyzerApp {
 
@@ -129,6 +133,16 @@ public class UserActionAnalyzerApp {
                     System.out.println("\n----- [1/1] 随机抽取 Session -----");
                     RandomSessionExtract.analyze(sc, taskId, taskParam,
                             userVisitActionPath, userInfoPath);
+                    break;
+
+                case "PROFILE":
+                    System.out.println("\n----- [1/1] 用户画像与行为分层 -----");
+                    UserProfileAnalyze.analyze(sc, taskId, taskParam);
+                    break;
+
+                case "ASSOCIATION":
+                    System.out.println("\n----- [1/1] 商品关联规则挖掘（FP-Growth） -----");
+                    ProductAssociationAnalyze.analyze(sc, taskId, taskParam);
                     break;
 
                 default:

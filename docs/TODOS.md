@@ -112,4 +112,7 @@ docker exec spark-master bash /opt/scripts/submit_job.sh user-analyzer-1.0-SNAPS
 - [x] 随机抽取 Session ✅
 - [x] 页面单跳转化率 ✅
 - [x] Spring Boot 接口 + ECharts 可视化 ✅
+- [x] 用户画像与行为分层（UserProfileAnalyze.java + user_level_stat 表 + API + 前端饼图）✅
+- [x] 商品关联分析（ProductAssociationAnalyze.java FP-Growth + product_association 表 + API + 前端表格）✅
+- [x] 修复 Session 时长分布缺少 4-6s / 7-9s 两个区间的展示 Bug ✅
 - [ ] 答辩 PPT

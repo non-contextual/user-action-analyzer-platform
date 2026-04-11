@@ -116,6 +116,41 @@ INSERT INTO task (task_id, task_name, task_type, task_param) VALUES
  '{"startDate":"2019-01-01","endDate":"2019-12-31","extractNumber":1000}')
 ON DUPLICATE KEY UPDATE task_name = VALUES(task_name);
 
+-- ============================================================
+-- 用户分层统计结果表
+-- 存储各用户等级（VIP/高价值/潜力/普通/沉默）的用户数和平均消费
+-- ============================================================
+CREATE TABLE IF NOT EXISTS user_level_stat (
+    task_id    BIGINT       NOT NULL COMMENT '任务ID',
+    user_level VARCHAR(20)  NOT NULL COMMENT '用户等级: VIP/高价值/潜力/普通/沉默',
+    user_count BIGINT       DEFAULT 0 COMMENT '该等级用户数',
+    avg_spend  DOUBLE       DEFAULT 0 COMMENT '该等级平均消费金额',
+    PRIMARY KEY (task_id, user_level)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户分层统计结果';
+
+-- ============================================================
+-- 商品关联规则表（FP-Growth 输出）
+-- ============================================================
+CREATE TABLE IF NOT EXISTS product_association (
+    task_id    BIGINT        NOT NULL COMMENT '任务ID',
+    antecedent VARCHAR(500)  NOT NULL COMMENT '前项品类（逗号分隔）',
+    consequent VARCHAR(500)  NOT NULL COMMENT '后项品类（逗号分隔）',
+    support    DOUBLE                 COMMENT '支持度',
+    confidence DOUBLE                 COMMENT '置信度',
+    lift       DOUBLE                 COMMENT '提升度',
+    PRIMARY KEY (task_id, antecedent(250), consequent(250))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品关联规则结果';
+
+-- ============================================================
+-- 插入新增任务参数（用户画像 / 商品关联）
+-- ============================================================
+INSERT INTO task (task_id, task_name, task_type, task_param) VALUES
+(4, 'user_profile_2019', 'PROFILE',
+ '{"startDate":"2019-01-01","endDate":"2019-12-31"}'),
+(5, 'product_association_2019', 'ASSOCIATION',
+ '{"startDate":"2019-01-01","endDate":"2019-12-31","minSupport":0.01,"minConfidence":0.3}')
+ON DUPLICATE KEY UPDATE task_name = VALUES(task_name);
+
 -- 授权 spark 用户
 GRANT ALL PRIVILEGES ON user_action_db.* TO 'spark'@'%';
 FLUSH PRIVILEGES;

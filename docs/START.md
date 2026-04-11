@@ -105,6 +105,12 @@ docker exec spark-master bash /opt/scripts/submit_job.sh user-analyzer-1.0-SNAPS
 
 # 任务 3：随机抽取 1000 个 Session（约 2-3 分钟）
 docker exec spark-master bash /opt/scripts/submit_job.sh user-analyzer-1.0-SNAPSHOT.jar 3
+
+# 任务 4：用户行为分层（VIP/高价值/潜力/普通/沉默），约 2-3 分钟
+docker exec spark-master bash /opt/scripts/submit_job.sh user-analyzer-1.0-SNAPSHOT.jar 4
+
+# 任务 5：商品关联规则挖掘（FP-Growth），约 3-5 分钟
+docker exec spark-master bash /opt/scripts/submit_job.sh user-analyzer-1.0-SNAPSHOT.jar 5
 ```
 
 ✅ 成功标志：日志末尾出现 `Job X finished` 且无 `ERROR` 字样。
@@ -194,15 +200,18 @@ mvn spring-boot:run
 
 ### 可用接口
 
-| 接口 | 说明 | 图表类型 |
-|------|------|---------|
-| `GET /api/analytics/session/length-distribution` | Session 时长分布 | 折线图 |
-| `GET /api/analytics/session/step-distribution` | Session 步长分布 | 柱状图 |
-| `GET /api/analytics/session/summary` | Session 汇总占比 | 饼图 |
-| `GET /api/analytics/category/top10` | 热门品类 Top10 | 柱状图 |
-| `GET /api/analytics/page/conversion-rate` | 页面单跳转化率 | 折线图 |
+| 接口 | 默认 taskId | 说明 | 图表类型 |
+|------|------------|------|---------|
+| `GET /api/analytics/session/length-distribution` | 1 | Session 时长分布 | 折线图 |
+| `GET /api/analytics/session/step-distribution` | 1 | Session 步长分布 | 柱状图 |
+| `GET /api/analytics/session/summary` | 1 | Session 汇总占比 | 饼图 |
+| `GET /api/analytics/category/top10` | 1 | 热门品类 Top10 | 柱状图 |
+| `GET /api/analytics/page/conversion-rate` | 1 | 页面单跳转化率 | 折线图 |
+| `GET /api/analytics/user/level-distribution` | 4 | 用户行为分层分布 | 饼图 |
+| `GET /api/analytics/association/rules` | 5 | 商品关联规则（FP-Growth） | 表格 |
+| `DELETE /api/analytics/cache/clear` | — | 清除所有接口缓存 | — |
 
-所有接口均支持 `?taskId=` 参数（默认为 1），对应 Spark 分析时写入的任务 ID。
+所有接口均支持 `?taskId=` 参数，对应 Spark 分析时写入的任务 ID。
 
 ---
 
@@ -329,3 +338,5 @@ docker exec spark-master bash -c "pkill -f SparkSubmit 2>/dev/null; sleep 5"
 | `page_convert_rate` | 页面单跳转化率 | task 1 (SESSION) |
 | `session_random_extract` | 随机抽取 Session 摘要 | task 3 (RANDOM) |
 | `session_detail` | 抽取 Session 行为明细 | task 3 (RANDOM) |
+| `user_level_stat` | 用户分层汇总（5级×每级用户数+均消费） | task 4 (PROFILE) |
+| `product_association` | FP-Growth 关联规则（前项、后项、置信度、提升度、支持度） | task 5 (ASSOCIATION) |
