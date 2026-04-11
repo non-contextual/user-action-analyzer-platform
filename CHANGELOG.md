@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - **Backend/AnalyticsService**: `getSessionLengthDistribution` 会话时长折线图缺少"4-6秒"和"7-9秒"两个区间——xAxis 从 7 项补全为 9 项，序列数据同步对齐
+- **Backend/LineChartData & BarChartData**: `xAxis` 字段经 Lombok getter 后被 Jackson 序列化为 `xaxis`（全小写），导致前端 `data.xAxis` 取值为 `undefined`，所有图表 x 轴显示数字序号而非实际标签。添加 `@JsonProperty("xAxis")` 修复
+- **Frontend**: 用户分层饼图图例设置为 `orient: vertical, left: left`，在卡片高度有限时"沉默"等条目被截断不显示。改为 `horizontal + bottom + scroll` 滚动图例
 
 ### Changed
 - **Spark/UserActionAnalyzerApp**: 新增 PROFILE 和 ASSOCIATION 两个 task_type 路由分支
